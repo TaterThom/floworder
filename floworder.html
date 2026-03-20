@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowOrder — powered by Unimicro</title>
+<link href="https://fonts.googleapis.com/css2?family=Anek+Gurmukhi:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     UNIMICRO BRAND COLORS
+     Primær:    #092329 (Uni Midnattsblå), #265DF6 (Uni Blå)
+     Sekundær:  #D0F59E (Lime), #F5BF9E (Fersken), #FDF0DB (Sand),
+                #E3F8FD (Himmelblå), #F1ECE5 (Ørken), #F7F6F3 (Lys ørken)
+     Sub:       #0E2E35, #D9E1E6, #EDEFF0, #F6F7F8
+  ============================================================ */
+  :root {
+    --midnight: #092329;
+    --sub-dark: #0E2E35;
+    --uni-blue: #265DF6;
+    --lime:     #D0F59E;
+    --peach:    #F5BF9E;
+    --sand:     #FDF0DB;
+    --sky:      #E3F8FD;
+    --desert:   #F1ECE5;
+    --desert-lt:#F7F6F3;
+    --sub-mid:  #D9E1E6;
+    --sub-lt:   #EDEFF0;
+    --sub-pale: #F6F7F8;
+
+    /* Mapped roles */
+    --bg:       var(--midnight);
+    --surface:  var(--sub-dark);
+    --surface2: #0a2d35;
+    --border:   #1a3d47;
+    --border2:  #234752;
+    --accent:   var(--uni-blue);
+    --accent-lt:var(--lime);
+    --accent-warm: var(--peach);
+    --text:     #f0f4f5;
+    --text-sub: var(--sub-mid);
+    --muted:    #6e8e96;
+    --radius:   10px;
+
+    /* Fonts */
+    --font-head: 'Anek Gurmukhi', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+  }
+
+  /* ============================================================
+     HEADER
+  ============================================================ */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--uni-blue);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 18px; height: 18px; }
+  .logo-text {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+  .logo-text span { color: var(--uni-blue); }
+  .logo-sub {
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 6px 16px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.18s;
+    letter-spacing: 0.01em;
+  }
+  .tab-btn.active {
+    background: var(--uni-blue);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(38,93,246,0.35);
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); background: var(--border); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .api-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
+  .dot.connected { background: var(--lime); box-shadow: 0 0 8px rgba(208,245,158,0.6); }
+  .dot.error { background: var(--peach); box-shadow: 0 0 6px rgba(245,191,158,0.6); }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+  /* ============================================================
+     LAYOUT
+  ============================================================ */
+  .main { flex: 1; display: flex; }
+
+  .sidebar {
+    width: 292px;
+    min-width: 292px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section h3 {
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* ============================================================
+     AUTH
+  ============================================================ */
+  .auth-step { display: none; }
+  .auth-step.active { display: block; }
+
+  .auth-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-bottom: 14px;
+  }
+  .auth-badge.step1 { background: rgba(38,93,246,0.15); color: #7fa3fa; border: 1px solid rgba(38,93,246,0.35); }
+  .auth-badge.done  { background: rgba(208,245,158,0.15); color: #8ecf4e; border: 1px solid rgba(208,245,158,0.35); }
+
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    padding: 8px 11px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 8px;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--uni-blue);
+    box-shadow: 0 0 0 3px rgba(38,93,246,0.12);
+  }
+  .form-input::placeholder { color: var(--muted); }
+  .form-select option { background: var(--sub-dark); }
+
+  .hint {
+    font-size: 0.67rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 10px;
+    font-family: var(--font-body);
+  }
+  code { color: #7fa3fa; font-family: 'Courier New', monospace; font-size: 0.72rem; }
+
+  .token-info {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.72rem;
+    margin-bottom: 10px;
+  }
+  .token-info .tlabel {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 2px;
+    margin-top: 9px;
+  }
+  .token-info .tlabel:first-child { margin-top: 0; }
+  .token-info .tval { color: var(--lime); word-break: break-all; font-weight: 500; }
+
+  /* ============================================================
+     BUTTONS
+  ============================================================ */
+  .btn {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-primary  { background: var(--uni-blue); color: #fff; box-shadow: 0 2px 8px rgba(38,93,246,0.3); }
+  .btn-primary:hover  { filter: brightness(1.12); box-shadow: 0 4px 14px rgba(38,93,246,0.4); }
+  .btn-secondary { background: transparent; color: var(--text-sub); border: 1px solid var(--border2); }
+  .btn-secondary:hover { border-color: var(--uni-blue); color: #7fa3fa; }
+  .btn-danger { background: transparent; color: var(--peach); border: 1px solid rgba(245,191,158,0.4); }
+  .btn-danger:hover { background: rgba(245,191,158,0.1); border-color: var(--peach); }
+  .btn-lime { background: var(--lime); color: var(--midnight); font-weight: 700; }
+  .btn-lime:hover { filter: brightness(1.08); }
+  .btn-blue { background: var(--uni-blue); color: #fff; }
+  .btn-blue:hover { filter: brightness(1.12); }
+  .btn-warn { background: var(--peach); color: var(--midnight); font-weight: 700; }
+  .btn-warn:hover { filter: brightness(1.06); }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ============================================================
+     API LOG
+  ============================================================ */
+  .api-log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.67rem;
+    color: #7fa3fa;
+    max-height: 220px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    line-height: 1.7;
+  }
+
+  /* ============================================================
+     CONTENT
+  ============================================================ */
+  .content { flex: 1; padding: 28px 32px; overflow-y: auto; background: #081d22; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .page-title {
+    font-family: var(--font-head);
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  /* ============================================================
+     CARDS & STATS
+  ============================================================ */
+  .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card-label {
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .card-value {
+    font-family: var(--font-head);
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .card-value.blue  { color: var(--uni-blue); }
+  .card-value.lime  { color: var(--lime); }
+  .card-value.peach { color: var(--peach); }
+
+  /* ============================================================
+     TABLES
+  ============================================================ */
+  .table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface);
+    font-family: var(--font-body);
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 11px 16px;
+    text-align: left;
+  }
+  td {
+    padding: 12px 16px;
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+    vertical-align: middle;
+    font-family: var(--font-body);
+  }
+  tr:hover td { background: rgba(38,93,246,0.04); }
+
+  /* ============================================================
+     BADGES
+  ============================================================ */
+  .badge {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 0.63rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .badge-draft { background: var(--border); color: var(--muted); }
+  .badge-ready { background: rgba(245,191,158,0.15); color: var(--peach); border: 1px solid rgba(245,191,158,0.35); }
+  .badge-sent  { background: rgba(208,245,158,0.15); color: #8ecf4e; border: 1px solid rgba(208,245,158,0.35); }
+  .badge-error    { background: rgba(246,100,100,0.12); color: #f87171; border: 1px solid rgba(246,100,100,0.3); }
+  .badge-invoiced { background: rgba(38,93,246,0.15); color: #7fa3fa; border: 1px solid rgba(38,93,246,0.4); }
+
+  /* ============================================================
+     MODALS
+  ============================================================ */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(9,35,41,0.82);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 28px;
+    width: 540px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.22s ease;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  @keyframes slideUp { from{transform:translateY(18px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title {
+    font-family: var(--font-head);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block;
+    font-size: 0.67rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+
+  /* ============================================================
+     ORDER LINES
+  ============================================================ */
+  .order-lines-section {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 14px 0;
+  }
+  .order-lines-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .order-line {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .order-line .form-input,
+  .order-line .form-select { padding: 7px 9px; font-size: 0.76rem; margin-bottom: 0; }
+  .total-row {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+    gap: 14px;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .total-label { color: var(--muted); font-size: 0.76rem; }
+  .total-amount { color: var(--lime); font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+
+  /* ============================================================
+     TOAST
+  ============================================================ */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    max-width: 360px;
+    animation: toastIn 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.success { border-left: 3px solid var(--lime); }
+  .toast.error   { border-left: 3px solid var(--peach); }
+  .toast.info    { border-left: 3px solid var(--uni-blue); }
+  @keyframes toastIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  /* ============================================================
+     OAUTH SCREEN
+  ============================================================ */
+  #oauthScreen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 999; align-items: center; justify-content: center; flex-direction: column; }
+  #oauthScreen.show { display: flex; }
+  .oauth-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    padding: 48px 40px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .oauth-card h2 { font-family: var(--font-head); font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+  .oauth-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--uni-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 22px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ============================================================
+     DASHBOARD READY LIST
+  ============================================================ */
+  .ready-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .ready-item:last-child { border-bottom: none; }
+  .ready-name { font-weight: 600; color: var(--text); font-size: 0.85rem; }
+  .ready-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .ready-amount { font-family: var(--font-head); font-size: 1rem; font-weight: 700; color: var(--lime); }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 0.82rem; font-family: var(--font-body); }
+
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  /* Blue accent stripe on card */
+  .card-accent { border-left: 3px solid var(--uni-blue); }
+  .card-lime   { border-left: 3px solid var(--lime); }
+  .card-peach  { border-left: 3px solid var(--peach); }
+</style>
+</head>
+<body>
+
+<!-- OAuth Loading Screen -->
+<div id="oauthScreen">
+  <div class="oauth-card">
+    <div class="oauth-spinner"></div>
+    <h2>Logger inn via Unimicro...</h2>
+    <p style="color:var(--muted);font-size:0.82rem;line-height:1.6">Bytter autorisasjonskode mot access token.</p>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <!-- Unimicro-inspired emblem: F mark for FlowOrder -->
+      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="8" height="2.2" rx="1" fill="white"/>
+        <rect x="3" y="7.5" width="6" height="2.2" rx="1" fill="white"/>
+        <rect x="3" y="12" width="8" height="2.2" rx="1" fill="white"/>
+        <circle cx="13.5" cy="13.5" r="2.5" fill="#D0F59E"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Flow<span>Order</span></div>
+      <div class="logo-sub">powered by Unimicro</div>
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="showPage('dashboard')">Oversikt</button>
+    <button class="tab-btn" onclick="showPage('customers')">Kunder</button>
+    <button class="tab-btn" onclick="showPage('products')">Produkter</button>
+    <button class="tab-btn" onclick="showPage('orders')">Ordrer</button>
+  </nav>
+
+  <div class="header-right">
+    <div class="api-status">
+      <div class="dot" id="apiDot"></div>
+      <span id="apiStatusText">Ikke pålogget</span>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h3>Unimicro OAuth2</h3>
+
+      <div class="auth-step active" id="step1">
+        <div class="auth-badge step1">① PKCE-pålogging</div>
+        <input class="form-input" id="cfgClientId"  placeholder="Client ID" />
+        <input class="form-input" id="cfgAuthUrl"   placeholder="Auth URL" />
+        <input class="form-input" id="cfgBusinessUrl" placeholder="Business/API URL" />
+        <input class="form-input" id="cfgRedirectUri" placeholder="Redirect URI (denne sidens URL)" />
+        <div class="hint">Bruker PKCE — ingen client secret nødvendig.<br>Scope: <code>AppFramework openid profile</code></div>
+        <button class="btn btn-primary btn-full" onclick="startPkce()">🔐 Logg inn med Unimicro</button>
+      </div>
+
+      <div class="auth-step" id="step2">
+        <div class="auth-badge done">✓ Autentisert</div>
+        <div class="token-info">
+          <div class="tlabel">Bruker</div>
+          <div class="tval" id="tokenUser">—</div>
+          <div class="tlabel">Token utløper</div>
+          <div class="tval" id="tokenExpiry">—</div>
+          <div class="tlabel">CompanyKey</div>
+          <div class="tval" id="tokenCompany">—</div>
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="pickCompany()" style="margin-bottom:8px">🏢 Bytt selskap</button>
+        <button class="btn btn-danger btn-full"    onclick="logout()">Logg ut</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <h3>API-logg</h3>
+      <div class="api-log" id="apiLog"></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Oversikt</div>
+      </div>
+      <div class="summary-cards" style="grid-template-columns:repeat(4,1fr)">
+        <div class="card card-accent">
+          <div class="card-label">Kunder</div>
+          <div class="card-value blue" id="statCustomers">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Produkter</div>
+          <div class="card-value" id="statProducts">0</div>
+        </div>
+        <div class="card card-peach">
+          <div class="card-label">Ordrer</div>
+          <div class="card-value peach" id="statOrders">0</div>
+        </div>
+        <div class="card" style="border-left:3px solid #7fa3fa">
+          <div class="card-label">Fakturert</div>
+          <div class="card-value blue" id="statInvoiced">0</div>
+        </div>
+      </div>
+      <div class="card card-lime">
+        <div class="card-label">Klare for fakturering</div>
+        <div id="dashboardReady" style="margin-top:12px">
+          <div style="color:var(--muted);font-size:0.82rem;">Ingen ordrer klare for fakturering.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="page" id="page-customers">
+      <div class="page-header">
+        <div class="page-title">Kunder</div>
+        <button class="btn btn-primary" id="addCustomerBtn">+ Ny kunde</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Navn</th><th>Org.nr</th><th>E-post</th><th>Telefon</th><th>By</th><th></th></tr></thead>
+          <tbody id="customerTable"><tr><td colspan="6"><div class="empty-state">Ingen kunder lagt til ennå.</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="page" id="page-products">
+      <div class="page-header">
+        <div class="page-title">Produkter</div>
+        <button class="btn btn-primary" id="addProductBtn">+ Nytt produkt</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Navn</th><th>Nr</th><th>Pris eks. mva</th><th>MVA %</th><th>Enhet</th><th></th></tr></thead>
+          <tbody id="productTable"><tr><td colspan="6"><div class="empty-state">Ingen produkter lagt til ennå.</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="page" id="page-orders">
+      <div class="page-header">
+        <div class="page-title">Ordrer</div>
+        <button class="btn btn-primary" id="addOrderBtn">+ Ny ordre</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ordrenr</th><th>Kunde</th><th>Dato</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <tbody id="orderTable"><tr><td colspan="6"><div class="empty-state">Ingen ordrer opprettet ennå.</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+
+<!-- Customer Modal -->
+<div class="modal-overlay" id="customerModal">
+  <div class="modal">
+    <div class="modal-title" id="customerModalTitle">Legg til kunde</div>
+    <div class="form-group"><label class="form-label">Navn *</label><input class="form-input" id="cName" placeholder="Bedrift eller person" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Org.nummer</label><input class="form-input" id="cOrg" placeholder="123456789" /></div>
+      <div class="form-group"><label class="form-label">Telefon</label><input class="form-input" id="cPhone" placeholder="+47 99999999" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">E-post</label><input class="form-input" id="cEmail" type="email" placeholder="kontakt@bedrift.no" /></div>
+    <div class="form-group"><label class="form-label">Adresse</label><input class="form-input" id="cAddress" placeholder="Gateadresse" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Postnummer</label><input class="form-input" id="cZip" placeholder="0000" /></div>
+      <div class="form-group"><label class="form-label">By</label><input class="form-input" id="cCity" placeholder="Oslo" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('customerModal')">Avbryt</button>
+      <button class="btn btn-primary"   onclick="saveCustomer()">Lagre kunde</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-title" id="productModalTitle">Legg til produkt</div>
+    <div class="form-group"><label class="form-label">Produktnavn *</label><input class="form-input" id="pName" placeholder="Produktnavn" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Produktnr</label><input class="form-input" id="pCode" placeholder="P001" /></div>
+      <div class="form-group"><label class="form-label">Enhet</label>
+        <select class="form-select" id="pUnit"><option>stk</option><option>time</option><option>dag</option><option>mnd</option><option>kg</option><option>m</option><option>m²</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Pris eks. mva (kr)</label><input class="form-input" id="pPrice" type="number" placeholder="0.00" step="0.01" /></div>
+      <div class="form-group"><label class="form-label">MVA %</label>
+        <select class="form-select" id="pVat"><option value="25">25%</option><option value="15">15%</option><option value="12">12%</option><option value="0">0%</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Beskrivelse</label><input class="form-input" id="pDesc" placeholder="Valgfri beskrivelse" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('productModal')">Avbryt</button>
+      <button class="btn btn-primary"   onclick="saveProduct()">Lagre produkt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Modal -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal" style="width:660px">
+    <div class="modal-title">Opprett ordre</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">FlowOrder ref.nr <span style="color:var(--muted);font-weight:400">(sendes som ContractDocumentReference)</span></label><input class="form-input" type="number" id="oOrderNo" min="1" max="9999999" step="1" placeholder="Auto-generert" /></div>
+      <div class="form-group"><label class="form-label">Ordredato</label><input class="form-input" type="date" id="oDate" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Kunde *</label><select class="form-select" id="oCustomer"><option value="">— velg kunde —</option></select></div>
+      <div class="form-group"><label class="form-label">Referanse / merking</label><input class="form-input" id="oRef" placeholder="Din ref., PO-nummer etc." /></div>
+    </div>
+    <div class="order-lines-section">
+      <div class="order-lines-header">
+        <span style="font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Ordrelinjer</span>
+        <button class="btn btn-secondary" onclick="addOrderLine()" style="padding:5px 12px;font-size:0.72rem">+ Legg til linje</button>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px">
+        <span style="font-size:0.62rem;font-weight:600;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase">Produkt</span>
+        <span style="font-size:0.62rem;font-weight:600;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase">Antall</span>
+        <span style="font-size:0.62rem;font-weight:600;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase">Pris</span>
+        <span style="font-size:0.62rem;font-weight:600;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase">Rabatt %</span>
+        <span></span>
+      </div>
+      <div id="orderLines"></div>
+      <div class="total-row">
+        <span class="total-label">Total eks. mva:</span>
+        <span class="total-amount" id="orderTotal">kr 0,00</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('orderModal')">Avbryt</button>
+      <button class="btn btn-primary"   onclick="saveOrder('draft')">💾 Lagre utkast</button>
+      <button class="btn btn-warn"      onclick="saveOrder('ready')">✅ Klar for fakturering</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Order Modal -->
+<div class="modal-overlay" id="viewOrderModal">
+  <div class="modal" style="width:660px">
+    <div id="viewOrderContent"></div>
+    <div class="modal-actions" id="viewOrderActions"></div>
+  </div>
+</div>
+
+<!-- Company Picker Modal -->
+<div class="modal-overlay" id="companyModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">Velg selskap</div>
+    <div id="companyList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('companyModal')">Avbryt</button></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+let customers = JSON.parse(localStorage.getItem('fo_customers') || '[]');
+let products  = JSON.parse(localStorage.getItem('fo_products')  || '[]');
+let orders    = JSON.parse(localStorage.getItem('fo_orders')    || '[]');
+let editingCustomer = null;
+let editingProduct  = null;
+let orderLineCount  = 0;
+let orderCounter    = parseInt(localStorage.getItem('fo_counter') || '0');
+
+function nextOrderNo() {
+  orderCounter++;
+  if (orderCounter > 9999999) orderCounter = 1;
+  localStorage.setItem('fo_counter', String(orderCounter));
+  return orderCounter;
+}
+
+let auth = {
+  accessToken:  localStorage.getItem('fo_at')  || null,
+  refreshToken: localStorage.getItem('fo_rt')  || null,
+  expiresAt:    parseInt(localStorage.getItem('fo_exp') || '0'),
+  companyKey:   localStorage.getItem('fo_ck')  || 'b0b2f458-0e6b-4d81-8c17-50538b0a4faf',
+  userName:     localStorage.getItem('fo_un')  || null,
+};
+
+// Auth URLs and API base stored in localStorage (persists across redirects)
+// Defaults — overridden by user input at login time
+let TOKEN_URL = localStorage.getItem('fo_token_url') || '';
+let AUTH_URL  = localStorage.getItem('fo_auth_url')  || '';
+let BASE_API  = localStorage.getItem('fo_biz_url')   || 'https://test.unimicro.no/api';
+const SCOPE   = 'AppFramework openid profile';
+
+function saveAuth() {
+  const s = localStorage;
+  auth.accessToken  ? s.setItem('fo_at',  auth.accessToken)  : s.removeItem('fo_at');
+  auth.refreshToken ? s.setItem('fo_rt',  auth.refreshToken) : s.removeItem('fo_rt');
+  s.setItem('fo_exp', String(auth.expiresAt));
+  // CompanyKey er hardkodet — alltid sett
+  s.setItem('fo_ck', auth.companyKey || 'b0b2f458-0e6b-4d81-8c17-50538b0a4faf');
+  auth.userName     ? s.setItem('fo_un',  auth.userName)     : s.removeItem('fo_un');
+}
+function saveData() {
+  localStorage.setItem('fo_customers', JSON.stringify(customers));
+  localStorage.setItem('fo_products',  JSON.stringify(products));
+  localStorage.setItem('fo_orders',    JSON.stringify(orders));
+}
+
+// ================================================================
+// UI HELPERS
+// ================================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const map = {dashboard:'oversikt',customers:'kunder',products:'produkter',orders:'ordrer'};
+  document.querySelectorAll('.tab-btn').forEach(b => { if (b.textContent.toLowerCase().trim()===map[name]) b.classList.add('active'); });
+  if (name==='dashboard') renderDashboard();
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+function toast(msg, type='info') {
+  const tc=document.getElementById('toastContainer');
+  const el=document.createElement('div');
+  const icons={success:'✓',error:'✕',info:'ℹ'};
+  const clrs={success:'var(--lime)',error:'var(--peach)',info:'var(--uni-blue)'};
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span style="font-weight:700;color:${clrs[type]}">${icons[type]}</span><span>${msg}</span>`;
+  tc.appendChild(el); setTimeout(()=>el.remove(),5000);
+}
+
+function log(msg, color) {
+  const el=document.getElementById('apiLog');
+  const div=document.createElement('div');
+  div.style.color=color||'#7fa3fa';
+  div.textContent=`[${new Date().toLocaleTimeString('no-NO')}] ${msg}`;
+  el.insertBefore(div,el.firstChild);
+}
+
+// ================================================================
+// AUTH — OAuth 2.0 PKCE (no client_secret)
+// ================================================================
+
+// ── PKCE helpers ─────────────────────────────────────────────────
+function generateRandom(len=64) {
+  const arr=new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr,b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function pkceChallenge(verifier) {
+  // S256: SHA-256 of verifier, base64url-encoded
+  const enc=new TextEncoder().encode(verifier);
+  const hash=await crypto.subtle.digest('SHA-256',enc);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+// ── Start PKCE flow ───────────────────────────────────────────────
+async function startPkce() {
+  const cid     = document.getElementById('cfgClientId').value.trim();
+  const authUrl = document.getElementById('cfgAuthUrl').value.trim();
+  const bizUrl  = document.getElementById('cfgBusinessUrl').value.trim();
+  const ru      = document.getElementById('cfgRedirectUri').value.trim();
+  if (!ru) { toast('Redirect URI må fylles inn', 'error'); return; }
+
+  if (!cid)     { toast('Skriv inn Client ID','error');  return; }
+  if (!authUrl) { toast('Skriv inn Auth URL','error');   return; }
+  if (!bizUrl)  { toast('Skriv inn Business URL','error'); return; }
+
+  // Normaliser auth URL — støtter både med og uten /authorize på slutten
+  const authBase   = authUrl.replace(/\/authorize\/?$/i,'').replace(/\/+$/,'');
+  const authUrlFull = authBase + '/authorize';
+  const tokenUrl    = authBase + '/token';
+
+  // Persist URLs for callback and refresh use
+  localStorage.setItem('fo_cid',       cid);
+  localStorage.setItem('fo_ru',        ru);
+  localStorage.setItem('fo_auth_url',  authUrlFull);
+  localStorage.setItem('fo_token_url', tokenUrl);
+  localStorage.setItem('fo_biz_url',   bizUrl.replace(/\/+$/,''));
+  AUTH_URL  = authUrlFull;
+  TOKEN_URL = tokenUrl;
+  BASE_API  = bizUrl.replace(/\/+$/,'');
+
+  // Generate PKCE pair
+  const verifier  = generateRandom(64);
+  const challenge = await pkceChallenge(verifier);
+  const state     = generateRandom(16);
+
+  localStorage.setItem('fo_verifier', verifier);
+  localStorage.setItem('fo_state',    state);
+
+  const params = new URLSearchParams({
+    client_id:             cid,
+    redirect_uri:          ru,
+    response_type:         'code',
+    scope:                 SCOPE,
+    state,
+    code_challenge:        challenge,
+    code_challenge_method: 'S256',
+  });
+
+  log(`PKCE-login → ${authUrlFull}`);
+
+  const finalUrl = `${authUrlFull}?${params}`;
+  log(`Navigerer til Unimicro login...`);
+  log(`redirect_uri: ${ru}`, '#8ecf4e');
+
+  // Vis debug-modal med full URL før navigering
+  const dbg = document.createElement('div');
+  dbg.style.cssText = 'position:fixed;inset:0;background:rgba(9,35,41,0.97);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  dbg.innerHTML = `
+    <div style="background:#0E2E35;border:1px solid #265DF6;border-radius:14px;padding:28px;max-width:700px;width:100%">
+      <div style="font-family:'Anek Gurmukhi',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:16px;color:#f0f4f5">
+        🔍 Debug — Auth URL som sendes til Unimicro
+      </div>
+      <div style="font-size:0.72rem;color:#6e8e96;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em">redirect_uri</div>
+      <div style="background:#081d22;border:1px solid #1a3d47;border-radius:6px;padding:10px;font-family:monospace;font-size:0.8rem;color:#D0F59E;word-break:break-all;margin-bottom:14px">${ru}</div>
+      <div style="font-size:0.72rem;color:#6e8e96;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em">Full auth URL</div>
+      <div style="background:#081d22;border:1px solid #1a3d47;border-radius:6px;padding:10px;font-family:monospace;font-size:0.72rem;color:#7fa3fa;word-break:break-all;margin-bottom:20px">${finalUrl}</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="navigator.clipboard.writeText('${ru}').then(()=>alert('Kopiert!'))" 
+          style="background:#265DF6;color:#fff;border:none;border-radius:7px;padding:9px 16px;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer">
+          📋 Kopier redirect_uri
+        </button>
+        <button onclick="window.location.href='${finalUrl}'"
+          style="background:#D0F59E;color:#092329;border:none;border-radius:7px;padding:9px 16px;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer">
+          ✓ Fortsett til innlogging
+        </button>
+        <button onclick="this.closest('div[style]').remove()"
+          style="background:transparent;color:#6e8e96;border:1px solid #1a3d47;border-radius:7px;padding:9px 16px;font-family:Inter,sans-serif;font-size:0.78rem;cursor:pointer">
+          Avbryt
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(dbg);
+}
+
+// ── Handle redirect callback ──────────────────────────────────────
+// Kalles ved full-navigasjon (fallback) — leser fra window.location
+async function handleCallback() {
+  const p = new URLSearchParams(window.location.search);
+  if (!p.get('code') && !p.get('error')) return;
+  cleanUrl();
+  await handleCallbackParams(p);
+}
+
+// Kalles fra popup-poller OG full-navigasjon fallback
+async function handleCallbackParams(p) {
+  const code  = p.get('code');
+  const state = p.get('state');
+  const err   = p.get('error');
+
+  if (err) {
+    toast(`OAuth-feil: ${err} — ${p.get('error_description')||''}`, 'error');
+    log(`OAuth feil: ${err}`, 'var(--peach)');
+    return;
+  }
+  if (!code) return;
+
+  if (state !== localStorage.getItem('fo_state')) {
+    toast('State mismatch – mulig CSRF', 'error');
+    return;
+  }
+
+  document.getElementById('oauthScreen').classList.add('show');
+
+  const cid      = localStorage.getItem('fo_cid');
+  const verifier = localStorage.getItem('fo_verifier');
+  const ru       = localStorage.getItem('fo_ru');
+  const tokenUrl = localStorage.getItem('fo_token_url');
+  const bizUrl   = localStorage.getItem('fo_biz_url');
+
+  if (tokenUrl) TOKEN_URL = tokenUrl;
+  if (bizUrl)   BASE_API  = bizUrl;
+
+  log('Bytter PKCE-kode mot access token...');
+  try {
+    const res = await fetch(TOKEN_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type:    'authorization_code',
+        code,
+        redirect_uri:  ru,
+        client_id:     cid,
+        code_verifier: verifier,
+      }).toString(),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.access_token)
+      throw new Error(data.error_description || data.error || `HTTP ${res.status}`);
+
+    storeTokens(data);
+    log(`✓ Innlogget via PKCE! Token utløper om ${data.expires_in}s`, '#8ecf4e');
+    document.getElementById('oauthScreen').classList.remove('show');
+    localStorage.removeItem('fo_verifier');
+    localStorage.removeItem('fo_state');
+    updateAuthUI();
+    await fetchAndSetCompany();
+    startPolling();
+  } catch(e) {
+    document.getElementById('oauthScreen').classList.remove('show');
+    log(`FEIL token-bytte: ${e.message}`, 'var(--peach)');
+    toast(`Innlogging feilet: ${e.message}`, 'error');
+  }
+}
+
+// ── Token storage ─────────────────────────────────────────────────
+function storeTokens(data) {
+  auth.accessToken  = data.access_token;
+  auth.refreshToken = data.refresh_token || null;
+  auth.expiresAt    = Date.now() + (data.expires_in || 3600) * 1000;
+  try {
+    const pay = JSON.parse(atob(data.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    auth.userName = pay.name || pay.sub || pay.email || 'Ukjent';
+  } catch { auth.userName = 'Autentisert'; }
+  saveAuth();
+}
+
+// ── Get valid token (refresh if needed) ───────────────────────────
+async function getToken() {
+  if (!auth.accessToken) return null;
+
+  // Restore URLs from localStorage if runtime vars were lost
+  const tu = localStorage.getItem('fo_token_url');
+  const bu = localStorage.getItem('fo_biz_url');
+  if (tu) TOKEN_URL = tu;
+  if (bu) BASE_API  = bu;
+
+  if (Date.now() > auth.expiresAt - 60000) {
+    if (!auth.refreshToken) return null;
+    try {
+      const res = await fetch(TOKEN_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type:    'refresh_token',
+          refresh_token: auth.refreshToken,
+          client_id:     localStorage.getItem('fo_cid') || '',
+          // PKCE refresh: ingen client_secret, ingen code_verifier
+        }).toString(),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.access_token) throw new Error('Refresh feilet');
+      storeTokens(data);
+      log('✓ Token fornyet (PKCE refresh)', '#8ecf4e');
+      updateAuthUI();
+    } catch(e) {
+      log(`Refresh-feil: ${e.message}`, 'var(--peach)');
+      return null;
+    }
+  }
+  return auth.accessToken;
+}
+
+function logout() {
+  auth = {accessToken:null,refreshToken:null,expiresAt:0,companyKey:null,userName:null};
+  saveAuth();
+  updateAuthUI();
+  toast('Logget ut','info');
+}
+function cleanUrl() { window.history.replaceState({}, document.title, window.location.href.split('?')[0]); }
+
+// ================================================================
+// COMPANY
+// ================================================================
+async function fetchAndSetCompany() {
+  const token=await getToken(); if(!token)return;
+  try {
+    log('GET /init/companies');
+    const res=await fetch(`${BASE_API}/init/companies`,{headers:{Authorization:`Bearer ${token}`}});
+    const list=await res.json();
+    log(`Fant ${list.length} selskap(er)`);
+    if(list.length===1){auth.companyKey=list[0].Key;saveAuth();updateAuthUI();toast(`Selskap: ${list[0].Name}`,'success');}
+    else if(list.length>1) showCompanyPicker(list);
+  } catch(e){log(`FEIL selskaper: ${e.message}`,'var(--peach)');}
+}
+
+function showCompanyPicker(list) {
+  document.getElementById('companyList').innerHTML=list.map(c=>`
+    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px;cursor:pointer;transition:all 0.18s"
+         onmouseover="this.style.borderColor='var(--uni-blue)';this.style.background='rgba(38,93,246,0.06)'"
+         onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--bg)'"
+         onclick="selectCompany('${c.Key}','${(c.Name||'').replace(/'/g,"\\'")}')">
+      <div style="font-weight:600;font-size:0.88rem;margin-bottom:4px">${c.Name}</div>
+      <div style="font-size:0.7rem;color:var(--muted)">${c.Key}</div>
+    </div>`).join('');
+  openModal('companyModal');
+}
+
+function selectCompany(key,name){auth.companyKey=key;saveAuth();updateAuthUI();closeModal('companyModal');toast(`Valgt: ${name}`,'success');log(`CompanyKey: ${key}`,'#8ecf4e');}
+async function pickCompany(){const t=await getToken();if(!t){toast('Logg inn først','error');return;}try{const r=await fetch(`${BASE_API}/init/companies`,{headers:{Authorization:`Bearer ${t}`}});showCompanyPicker(await r.json());}catch{toast('Kunne ikke hente selskaper','error');}}
+
+function updateAuthUI() {
+  const on=!!auth.accessToken;
+  document.getElementById('step1').classList.toggle('active',!on);
+  document.getElementById('step2').classList.toggle('active',on);
+  const dot=document.getElementById('apiDot'),txt=document.getElementById('apiStatusText');
+  if(on){
+    dot.className='dot connected'; txt.textContent=auth.companyKey?'Tilkoblet':'Innlogget';
+    document.getElementById('tokenUser').textContent=auth.userName||'—';
+    document.getElementById('tokenExpiry').textContent=auth.expiresAt?new Date(auth.expiresAt).toLocaleString('no-NO'):'—';
+    document.getElementById('tokenCompany').textContent=auth.companyKey||'b0b2f458-0e6b-4d81-8c17-50538b0a4faf';
+  } else { dot.className='dot'; txt.textContent='Ikke pålogget'; }
+}
+
+function apiHeaders(){
+  const h={'Content-Type':'application/json'};
+  if(auth.accessToken) h['Authorization']=`Bearer ${auth.accessToken}`;
+  h['CompanyKey'] = auth.companyKey || 'b0b2f458-0e6b-4d81-8c17-50538b0a4faf';
+  return h;
+}
+
+// ================================================================
+// CUSTOMERS
+// ================================================================
+document.getElementById('addCustomerBtn').onclick=()=>{
+  editingCustomer=null;
+  document.getElementById('customerModalTitle').textContent='Legg til kunde';
+  ['cName','cOrg','cEmail','cPhone','cAddress','cZip','cCity'].forEach(id=>document.getElementById(id).value='');
+  openModal('customerModal');
+};
+
+function renderCustomers(){
+  const tb=document.getElementById('customerTable');
+  if(!customers.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state">Ingen kunder lagt til ennå.</div></td></tr>';updateStats();return;}
+  tb.innerHTML=customers.map((c,i)=>`<tr>
+    <td><strong>${c.name}</strong></td><td>${c.org||'—'}</td><td>${c.email||'—'}</td><td>${c.phone||'—'}</td><td>${c.city||'—'}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="btn btn-secondary" style="padding:5px 12px;font-size:0.72rem" onclick="editCustomer(${i})">Rediger</button>
+      <button class="btn btn-danger"    style="padding:5px 9px;font-size:0.72rem;margin-left:4px" onclick="deleteCustomer(${i})">✕</button>
+    </td></tr>`).join('');
+  updateStats();
+}
+
+function editCustomer(i){
+  editingCustomer=i;const c=customers[i];
+  document.getElementById('customerModalTitle').textContent='Rediger kunde';
+  document.getElementById('cName').value=c.name||''; document.getElementById('cOrg').value=c.org||'';
+  document.getElementById('cEmail').value=c.email||''; document.getElementById('cPhone').value=c.phone||'';
+  document.getElementById('cAddress').value=c.address||''; document.getElementById('cZip').value=c.zip||'';
+  document.getElementById('cCity').value=c.city||''; openModal('customerModal');
+}
+function saveCustomer(){
+  const name=document.getElementById('cName').value.trim();
+  if(!name){toast('Kundenavn er påkrevd','error');return;}
+  const c={id:editingCustomer!==null?customers[editingCustomer].id:Date.now(),name,
+    org:document.getElementById('cOrg').value.trim(),email:document.getElementById('cEmail').value.trim(),
+    phone:document.getElementById('cPhone').value.trim(),address:document.getElementById('cAddress').value.trim(),
+    zip:document.getElementById('cZip').value.trim(),city:document.getElementById('cCity').value.trim()};
+  if(editingCustomer!==null)customers[editingCustomer]=c;else customers.push(c);
+  saveData();renderCustomers();closeModal('customerModal');toast(editingCustomer!==null?'Kunde oppdatert':'Kunde lagt til','success');
+}
+function deleteCustomer(i){if(!confirm(`Slett ${customers[i].name}?`))return;customers.splice(i,1);saveData();renderCustomers();toast('Slettet','info');}
+
+// ================================================================
+// PRODUCTS
+// ================================================================
+document.getElementById('addProductBtn').onclick=()=>{
+  editingProduct=null;
+  document.getElementById('productModalTitle').textContent='Legg til produkt';
+  ['pName','pCode','pPrice','pDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pUnit').value='stk';document.getElementById('pVat').value='25';
+  openModal('productModal');
+};
+
+function renderProducts(){
+  const tb=document.getElementById('productTable');
+  if(!products.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state">Ingen produkter lagt til ennå.</div></td></tr>';updateStats();return;}
+  tb.innerHTML=products.map((p,i)=>`<tr>
+    <td><strong>${p.name}</strong>${p.desc?`<br><span style="color:var(--muted);font-size:0.72rem">${p.desc}</span>`:''}</td>
+    <td>${p.code||'—'}</td><td>kr ${fmt(p.price)}</td><td>${p.vat}%</td><td>${p.unit}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="btn btn-secondary" style="padding:5px 12px;font-size:0.72rem" onclick="editProduct(${i})">Rediger</button>
+      <button class="btn btn-danger"    style="padding:5px 9px;font-size:0.72rem;margin-left:4px" onclick="deleteProduct(${i})">✕</button>
+    </td></tr>`).join('');
+  updateStats();
+}
+
+function editProduct(i){
+  editingProduct=i;const p=products[i];
+  document.getElementById('productModalTitle').textContent='Rediger produkt';
+  document.getElementById('pName').value=p.name;document.getElementById('pCode').value=p.code||'';
+  document.getElementById('pPrice').value=p.price;document.getElementById('pVat').value=p.vat;
+  document.getElementById('pUnit').value=p.unit;document.getElementById('pDesc').value=p.desc||'';
+  openModal('productModal');
+}
+function saveProduct(){
+  const name=document.getElementById('pName').value.trim();
+  if(!name){toast('Produktnavn er påkrevd','error');return;}
+  const p={id:editingProduct!==null?products[editingProduct].id:Date.now(),name,
+    code:document.getElementById('pCode').value.trim(),price:parseFloat(document.getElementById('pPrice').value)||0,
+    vat:parseInt(document.getElementById('pVat').value),unit:document.getElementById('pUnit').value,
+    desc:document.getElementById('pDesc').value.trim()};
+  if(editingProduct!==null)products[editingProduct]=p;else products.push(p);
+  saveData();renderProducts();closeModal('productModal');toast(editingProduct!==null?'Produkt oppdatert':'Produkt lagt til','success');
+}
+function deleteProduct(i){if(!confirm(`Slett ${products[i].name}?`))return;products.splice(i,1);saveData();renderProducts();toast('Slettet','info');}
+
+// ================================================================
+// ORDERS
+// ================================================================
+document.getElementById('addOrderBtn').onclick=openOrderModal;
+
+function openOrderModal(){
+  if(!customers.length){toast('Legg til minst én kunde først','error');return;}
+  const sel=document.getElementById('oCustomer');
+  sel.innerHTML='<option value="">— velg kunde —</option>'+customers.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('oDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('oOrderNo').value=nextOrderNo();
+  document.getElementById('oRef').value='';
+  document.getElementById('orderLines').innerHTML='';
+  orderLineCount=0;addOrderLine();updateOrderTotal();openModal('orderModal');
+}
+
+function addOrderLine(){
+  orderLineCount++;const idx=orderLineCount;
+  const opts=products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const div=document.createElement('div');div.className='order-line';div.id=`line_${idx}`;
+  div.innerHTML=`
+    <select class="form-select" id="line_${idx}_p" onchange="lineProdChange(${idx})"><option value="">— produkt —</option>${opts}</select>
+    <input class="form-input" type="number" id="line_${idx}_q"  value="1" min="1" oninput="updateOrderTotal()"/>
+    <input class="form-input" type="number" id="line_${idx}_pr" placeholder="Pris" step="0.01" oninput="updateOrderTotal()"/>
+    <input class="form-input" type="number" id="line_${idx}_d"  placeholder="0" min="0" max="100" oninput="updateOrderTotal()"/>
+    <button class="btn btn-danger" style="padding:5px 8px" onclick="removeOrderLine(${idx})">✕</button>`;
+  document.getElementById('orderLines').appendChild(div);
+}
+function lineProdChange(idx){const pid=document.getElementById(`line_${idx}_p`).value;const p=products.find(p=>String(p.id)===String(pid));if(p)document.getElementById(`line_${idx}_pr`).value=p.price;updateOrderTotal();}
+function removeOrderLine(idx){const el=document.getElementById(`line_${idx}`);if(el)el.remove();updateOrderTotal();}
+function getOrderLines(){
+  return [...document.querySelectorAll('.order-line')].reduce((acc,row)=>{
+    const idx=row.id.split('_')[1];
+    const pid=document.getElementById(`line_${idx}_p`)?.value;
+    const qty=parseFloat(document.getElementById(`line_${idx}_q`)?.value)||0;
+    const price=parseFloat(document.getElementById(`line_${idx}_pr`)?.value)||0;
+    const disc=parseFloat(document.getElementById(`line_${idx}_d`)?.value)||0;
+    if(!pid||qty<=0)return acc;
+    acc.push({product:products.find(p=>String(p.id)===String(pid)),qty,price,disc});return acc;
+  },[]);
+}
+function updateOrderTotal(){
+  const t=getOrderLines().reduce((s,l)=>s+l.qty*l.price*(1-l.disc/100),0);
+  document.getElementById('orderTotal').textContent=`kr ${fmt(t)}`;
+}
+
+function saveOrder(status){
+  const custId=document.getElementById('oCustomer').value;
+  if(!custId){toast('Velg en kunde','error');return;}
+  const lines=getOrderLines();
+  if(!lines.length){toast('Legg til minst én ordrelinje','error');return;}
+  const customer=customers.find(c=>String(c.id)===String(custId));
+  const total=lines.reduce((s,l)=>s+l.qty*l.price*(1-l.disc/100),0);
+  const orderNo=parseInt(document.getElementById('oOrderNo').value)||nextOrderNo();
+  const order={id:Date.now(),orderNo:orderNo,
+    customerId:customer.id,customerName:customer.name,
+    date:document.getElementById('oDate').value,ref:document.getElementById('oRef').value.trim(),
+    lines,total,status,createdAt:new Date().toISOString(),uniResponse:null,uniId:null};
+  orders.push(order);saveData();renderOrders();renderDashboard();closeModal('orderModal');
+  toast(status==='ready'?'Ordre klar for fakturering!':'Utkast lagret','success');
+}
+
+function renderOrders(){
+  const tb=document.getElementById('orderTable');
+  if(!orders.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state">Ingen ordrer opprettet ennå.</div></td></tr>';updateStats();return;}
+  tb.innerHTML=[...orders].reverse().map(o=>{
+    const bs={draft:['badge-draft','Utkast'],ready:['badge-ready','Klar'],sent:['badge-sent','Sendt'],error:['badge-error','Feil'],invoiced:['badge-invoiced','Fakturert']};
+    const [bc,bt]=bs[o.status]||bs.draft;
+    let a='';
+    if(o.status==='draft') a+=`<button class="btn btn-secondary" style="padding:5px 12px;font-size:0.72rem" onclick="setReady('${o.id}')">→ Klar</button>`;
+    if(o.status==='sent') a+=`<button class="btn btn-secondary" style="padding:5px 12px;font-size:0.72rem" onclick="checkUniStatus('${o.id}')">↻ Sjekk</button>`;
+    if(o.status==='ready') a+=`<button class="btn btn-warn" style="padding:5px 12px;font-size:0.72rem" onclick="sendToUni('${o.id}')">⬆ Send</button>`;
+    a+=`<button class="btn btn-secondary" style="padding:5px 10px;font-size:0.72rem;margin-left:4px" onclick="viewOrder('${o.id}')">Vis</button>`;
+    if(o.status!=='sent') a+=`<button class="btn btn-danger" style="padding:5px 8px;font-size:0.72rem;margin-left:4px" onclick="delOrder('${o.id}')">✕</button>`;
+    return `<tr><td><strong>#${o.orderNo}</strong></td><td>${o.customerName}</td><td>${o.date}</td><td>kr ${fmt(o.total)}</td><td><span class="badge ${bc}">${bt}</span></td><td style="text-align:right;white-space:nowrap">${a}</td></tr>`;
+  }).join('');
+  updateStats();
+}
+
+function setReady(id){const o=orders.find(o=>String(o.id)===String(id));if(o){o.status='ready';saveData();renderOrders();renderDashboard();toast('Ordre klar','success');}}
+function delOrder(id){if(!confirm('Slett ordren?'))return;orders=orders.filter(o=>String(o.id)!==String(id));saveData();renderOrders();renderDashboard();toast('Slettet','info');}
+
+function viewOrder(id){
+  const o=orders.find(o=>String(o.id)===String(id));if(!o)return;
+  const lines=o.lines.map(l=>`<tr><td>${l.product?.name||'Ukjent'}</td><td>${l.qty} ${l.product?.unit||''}</td><td>kr ${fmt(l.price)}</td><td>${l.disc||0}%</td><td>kr ${fmt(l.qty*l.price*(1-(l.disc||0)/100))}</td></tr>`).join('');
+  document.getElementById('viewOrderContent').innerHTML=`
+    <div class="modal-title">#${o.orderNo} — ${o.customerName}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:0.8rem">
+      <div><span style="color:var(--muted)">Dato:</span> ${o.date}</div>
+      <div><span style="color:var(--muted)">Status:</span> ${o.status}</div>
+      <div><span style="color:var(--muted)">Ref:</span> ${o.ref||'—'}</div>
+      <div><span style="color:var(--muted)">Total:</span> <strong style="color:var(--lime)">kr ${fmt(o.total)}</strong></div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:12px">
+      <table><thead><tr><th>Produkt</th><th>Antall</th><th>Pris</th><th>Rabatt</th><th>Sum</th></tr></thead><tbody>${lines}</tbody></table>
+    </div>
+    ${o.uniResponse?`<div style="font-size:0.7rem;color:var(--muted);margin-top:8px">Unimicro-svar: <code style="color:#7fa3fa">${JSON.stringify(o.uniResponse).slice(0,300)}</code></div>`:''}`;
+  const acts=document.getElementById('viewOrderActions');acts.innerHTML='';
+  const cl=document.createElement('button');cl.className='btn btn-secondary';cl.textContent='Lukk';cl.onclick=()=>closeModal('viewOrderModal');acts.appendChild(cl);
+  if(o.status==='ready'){const sb=document.createElement('button');sb.className='btn btn-warn';sb.textContent='⬆ Send til Unimicro';sb.onclick=()=>{closeModal('viewOrderModal');sendToUni(id)};acts.appendChild(sb);}
+  openModal('viewOrderModal');
+}
+
+// ================================================================
+// SEND TO UNIMICRO
+// ================================================================
+// ── Slå opp kunde i Unimicro — returner CustomerID eller null ────
+async function lookupUniCustomer(customer) {
+  if (!customer) return null;
+  try {
+    // Søk først på org.nummer hvis det finnes
+    let url, res, data;
+    if (customer.org) {
+      url = `${BASE_API}/biz/customers?expand=Info&filter=OrgNumber eq '${encodeURIComponent(customer.org)}'&select=ID`;
+      log(`GET kunder via org.nr: ${customer.org}`);
+      res  = await fetch(url, { headers: apiHeaders() });
+      data = await res.json();
+      if (res.ok && data?.length > 0) {
+        log(`✓ Kunde funnet i Unimicro (org.nr) — ID: ${data[0].ID}`, '#8ecf4e');
+        return data[0].ID;
+      }
+    }
+    // Søk på navn
+    url  = `${BASE_API}/biz/customers?expand=Info&filter=Info.Name eq '${encodeURIComponent(customer.name)}'&select=ID`;
+    log(`GET kunder via navn: ${customer.name}`);
+    res  = await fetch(url, { headers: apiHeaders() });
+    data = await res.json();
+    if (res.ok && data?.length > 0) {
+      log(`✓ Kunde funnet i Unimicro (navn) — ID: ${data[0].ID}`, '#8ecf4e');
+      return data[0].ID;
+    }
+    log(`Kunde ikke funnet i Unimicro — opprettes inline`);
+    return null;
+  } catch(e) {
+    log(`Advarsel: kunne ikke slå opp kunde (${e.message}) — opprettes inline`, 'var(--peach)');
+    return null;
+  }
+}
+
+// ── Bygg Customer-objekt for ny kunde (ID: 0) ────────────────────
+function buildNewCustomer(customer) {
+  const guid = () => crypto.randomUUID();
+  return {
+    ID:        0,
+    OrgNumber: customer.org || null,
+    Info: {
+      ID:   0,
+      Name: customer.name,
+      Emails: customer.email ? [{
+        EmailAddress: customer.email,
+        _createguid:  guid(),
+      }] : [],
+      Phones: customer.phone ? [{
+        Number:      customer.phone,
+        _createguid: guid(),
+      }] : [],
+      InvoiceAddress: {
+        AddressLine1: customer.address || null,
+        PostalCode:   customer.zip     || null,
+        City:         customer.city    || null,
+        CountryCode:  'NO',
+        _createguid:  guid(),
+      },
+      ShippingAddress: {
+        AddressLine1: customer.address || null,
+        PostalCode:   customer.zip     || null,
+        City:         customer.city    || null,
+        CountryCode:  'NO',
+        _createguid:  guid(),
+      },
+      _createguid: guid(),
+    },
+    _createguid: guid(),
+  };
+}
+
+async function sendToUni(id){
+  const o=orders.find(o=>String(o.id)===String(id));if(!o)return;
+  const token=await getToken();
+  if(!token){toast('Logg inn først','error');return;}
+
+  const customer=customers.find(c=>String(c.id)===String(o.customerId));
+
+  // ── Slå opp kunde i Unimicro ─────────────────────────────────
+  const uniCustomerId = customer ? await lookupUniCustomer(customer) : null;
+
+  // ── Bygg payload ─────────────────────────────────────────────
+  const payload = {
+    // --- Ordre-hode (CustomerOrder) ---
+    OrderDate:                 o.date,
+    ContractDocumentReference: String(o.orderNo),
+    CustomerName:              customer?.name || o.customerName,
+    CustomerOrgNumber:         customer?.org  || null,
+    OurReference:              o.ref          || null,
+    EmailAddress:              customer?.email || null,
+    InvoiceAddressLine1:       customer?.address || null,
+    InvoicePostalCode:         customer?.zip     || null,
+    InvoiceCity:               customer?.city    || null,
+    ReadyToInvoice:            o.status === 'ready',
+
+    // Koble til eksisterende kunde, eller opprett ny inline
+    CustomerID: uniCustomerId || 0,
+    Customer:   uniCustomerId ? undefined : (customer ? buildNewCustomer(customer) : undefined),
+
+    // --- Ordrelinjer (CustomerOrderItem) ---
+    Items: o.lines.map((l, idx) => ({
+      _createguid:     crypto.randomUUID(),
+      SortIndex:       idx + 1,
+      ItemText:        l.product?.name || '',
+      Unit:            l.product?.unit || 'stk',
+      NumberOfItems:   l.qty,
+      PriceExVat:      l.price,
+      PriceSetByUser:  true,
+      DiscountPercent: l.disc || 0,
+      VatPercent:      l.product?.vat ?? 25,
+      VatTypeID:       vatTypeId(l.product?.vat ?? 25),
+    })),
+  };
+
+  // Fjern undefined-felter
+  if (payload.Customer === undefined) delete payload.Customer;
+
+  const url = `${BASE_API}/biz/orders`;
+  log(`POST ${url} — CustomerID: ${uniCustomerId || 'ny kunde'}`);
+  try {
+    const res=await fetch(url,{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload)});
+    const text=await res.text();let data;try{data=JSON.parse(text);}catch{data=text;}
+    if(res.ok){
+      o.status='sent';o.uniResponse=data;o.uniId=data?.ID||null;saveData();renderOrders();renderDashboard();
+      log(`✓ ${res.status} — Unimicro ID: ${data?.ID||'?'}, Ordrenr: ${data?.OrderNumber||'?'}, FlowOrder ref: ${o.orderNo}`,'#8ecf4e');
+      toast(`✓ Sendt! Unimicro ordrenr: ${data?.OrderNumber||'?'} (FlowOrder #${o.orderNo})`,'success');
+    } else {
+      o.status='error';o.uniResponse=data;saveData();renderOrders();
+      log(`FEIL ${res.status}: ${JSON.stringify(data).slice(0,200)}`,'var(--peach)');
+      toast(`Feil ${res.status}: ${data?.Message||data?.error||text.slice(0,80)}`,'error');
+    }
+  } catch(e){o.status='error';saveData();renderOrders();log(`NETTVERKSFEIL: ${e.message}`,'var(--peach)');toast('Nettverksfeil','error');}
+}
+
+
+// ================================================================
+// HELPERS
+// ================================================================
+// VatTypeID mapping bekreftet av Unimicro: 25% = 11
+function vatTypeId(pct) {
+  if (pct === 25)  return 11;
+  if (pct === 15)  return 12;
+  if (pct === 12)  return 13;
+  if (pct === 0)   return 6;
+  return 11; // fallback til 25%
+}
+
+// ================================================================
+// STATUS POLLING — henter StatusCode fra Unimicro og oppdaterer FlowOrder
+// StatusCode 41004 = overført til CustomerInvoice (Fakturert)
+// ================================================================
+const STATUS_INVOICED = 41004;
+let pollTimer = null;
+
+async function checkUniStatus(id) {
+  const o = orders.find(o => String(o.id) === String(id));
+  if (!o || !o.uniId) { toast('Mangler Unimicro ordre-ID', 'error'); return; }
+
+  const token = await getToken();
+  if (!token) { toast('Logg inn først', 'error'); return; }
+
+  log(`GET /biz/orders/${o.uniId} — sjekker StatusCode...`);
+  try {
+    const res  = await fetch(`${BASE_API}/biz/orders/${o.uniId}`, { headers: apiHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.Message || `HTTP ${res.status}`);
+
+    const sc = data?.StatusCode;
+    log(`StatusCode for ordre #${o.orderNo}: ${sc}`);
+
+    if (sc === STATUS_INVOICED) {
+      o.status = 'invoiced';
+      o.uniResponse = data;
+      saveData(); renderOrders(); renderDashboard();
+      toast(`Ordre #${o.orderNo} er fakturert i Unimicro!`, 'success');
+      log(`✓ Ordre #${o.orderNo} — StatusCode ${sc} → Fakturert`, '#8ecf4e');
+    } else {
+      toast(`StatusCode: ${sc} — ikke fakturert ennå`, 'info');
+    }
+  } catch(e) {
+    log(`FEIL ved statushenting: ${e.message}`, 'var(--peach)');
+    toast(`Kunne ikke hente status: ${e.message}`, 'error');
+  }
+}
+
+async function pollAllSentOrders() {
+  const sentOrders = orders.filter(o => o.status === 'sent' && o.uniId);
+  if (!sentOrders.length) return;
+  const token = await getToken();
+  if (!token) return;
+  log(`Auto-poll: sjekker ${sentOrders.length} sendt(e) ordre(r)...`);
+  for (const o of sentOrders) {
+    try {
+      const res  = await fetch(`${BASE_API}/biz/orders/${o.uniId}`, { headers: apiHeaders() });
+      const data = await res.json();
+      if (res.ok && data?.StatusCode === STATUS_INVOICED) {
+        o.status = 'invoiced';
+        o.uniResponse = data;
+        log(`✓ Auto-poll: ordre #${o.orderNo} fakturert (StatusCode ${data.StatusCode})`, '#8ecf4e');
+        toast(`Ordre #${o.orderNo} er nå fakturert i Unimicro!`, 'success');
+      }
+    } catch { /* ignorer individuelle feil i poll */ }
+  }
+  saveData(); renderOrders(); renderDashboard();
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollAllSentOrders, 30000); // hvert 30 sek
+  log('Auto-poll startet — sjekker fakturastatus hvert 30 sek');
+}
+
+// ================================================================
+// DASHBOARD
+// ================================================================
+function renderDashboard(){
+  const ready=orders.filter(o=>o.status==='ready');
+  const el=document.getElementById('dashboardReady');
+  if(!ready.length){el.innerHTML='<div style="color:var(--muted);font-size:0.82rem;">Ingen ordrer klare for fakturering.</div>';return;}
+  el.innerHTML=ready.map(o=>`
+    <div class="ready-item">
+      <div>
+        <div class="ready-name">#${o.orderNo} — ${o.customerName}</div>
+        <div class="ready-meta">${o.date}${o.ref?' · '+o.ref:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="ready-amount">kr ${fmt(o.total)}</span>
+        <button class="btn btn-primary" style="padding:6px 14px;font-size:0.74rem" onclick="sendToUni('${o.id}')">⬆ Send</button>
+      </div>
+    </div>`).join('');
+  updateStats();
+}
+
+function updateStats(){
+  document.getElementById('statCustomers').textContent=customers.length;
+  document.getElementById('statProducts').textContent=products.length;
+  document.getElementById('statOrders').textContent=orders.length;
+  const inv=orders.filter(o=>o.status==='invoiced').length;
+  const invEl=document.getElementById('statInvoiced');
+  if(invEl) invEl.textContent=inv;
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('nb-NO',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// ================================================================
+// INIT
+// ================================================================
+// ── Gjenopprett feltverdier fra localStorage ─────────────────────
+const _cid = localStorage.getItem('fo_cid');
+const _au  = localStorage.getItem('fo_auth_url');
+const _bu  = localStorage.getItem('fo_biz_url');
+const _ru  = localStorage.getItem('fo_ru');
+if (_cid) document.getElementById('cfgClientId').value    = _cid;
+if (_au)  document.getElementById('cfgAuthUrl').value     = _au;
+if (_bu)  document.getElementById('cfgBusinessUrl').value = _bu;
+// Redirect URI: bruk lagret verdi, aldri window.location (kan være about:srcdoc i iframe)
+if (_ru)  document.getElementById('cfgRedirectUri').value = _ru;
+else      document.getElementById('cfgRedirectUri').value = 'https://taterthom.github.io/floworder/floworder.html';
+
+updateAuthUI();renderCustomers();renderProducts();renderOrders();renderDashboard();
+handleCallback();
+// Start polling om vi allerede er innlogget fra forrige sesjon
+if (auth.accessToken) startPolling();
+</script>
+</body>
+</html>
