@@ -1,0 +1,29 @@
+/* ============================================================
+   Dark Theme — Base Theme for FlowOrder
+============================================================ */
+
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+input, select, textarea {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+}
+
+input::placeholder {
+    color: var(--muted);
+}
+
+.btn-primary {
+    background: var(--uni-blue);
+    color: white;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text-sub);
+}
