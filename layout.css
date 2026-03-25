@@ -1,0 +1,42 @@
+/* ============================================================
+   Layout: Header, Sidebar, Content Area
+============================================================ */
+
+/* HEADER */
+#app-header {
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+/* APP GRID */
+.app-wrap {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    flex: 1;
+    min-height: 0;
+}
+
+/* SIDEBAR */
+#sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* CONTENT */
+#content {
+    background: #081d22;
+    padding: 32px;
+    overflow-y: auto;
+}
