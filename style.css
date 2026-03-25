@@ -1,0 +1,60 @@
+/* ============================================================
+   FlowOrder 2.0 — Global Styles
+   Vars, fonts, reset, base tokens
+============================================================ */
+
+:root {
+    /* Brand colors */
+    --midnight: #092329;
+    --sub-dark: #0E2E35;
+    --uni-blue: #265DF6;
+    --lime: #D0F59E;
+    --peach: #F5BF9E;
+    --sand: #FDF0DB;
+
+    /* UI roles */
+    --bg: var(--midnight);
+    --surface: var(--sub-dark);
+    --surface2: #0a2d35;
+    --border: #1a3d47;
+    --border2: #234752;
+    --text: #f0f4f5;
+    --text-sub: #d9e1e6;
+    --muted: #6e8e96;
+
+    --radius: 10px;
+
+    --font-head: 'Anek Gurmukhi', sans-serif;
+    --font-body: 'Inter', sans-serif;
+}
+
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Utility */
+.hidden {
+    display: none !important;
+}
+
+button {
+    cursor: pointer;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
