@@ -1,0 +1,37 @@
+/* ============================================================
+   Forms
+============================================================ */
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.86rem;
+    margin-bottom: 10px;
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: var(--uni-blue);
+    box-shadow: 0 0 0 3px rgba(38, 93, 246, 0.2);
+    outline: none;
+}
+
+.form-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
