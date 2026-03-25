@@ -1,0 +1,41 @@
+/* ============================================================
+   Data Tables
+============================================================ */
+
+.table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 16px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: var(--surface);
+    padding: 12px 16px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+}
+
+td {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+}
+
+tr:hover td {
+    background: rgba(38, 93, 246, 0.06);
+}
+
+.empty-state {
+    color: var(--muted);
+    text-align: center;
+    padding: 40px 0;
+}
