@@ -1,0 +1,62 @@
+/* ============================================================
+   Dashboard Cards
+============================================================ */
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+}
+
+.card-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.card-value {
+    font-family: var(--font-head);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.card.blue { border-left: 3px solid var(--uni-blue); }
+.card.lime { border-left: 3px solid var(--lime); }
+.card.peach { border-left: 3px solid var(--peach); }
+
+/* Ready Orders Section */
+.ready-list {
+    margin-top: 20px;
+}
+
+.ready-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.ready-item:last-child {
+    border-bottom: none;
+}
+
+.ready-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ready-amount {
+    color: var(--lime);
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+}
